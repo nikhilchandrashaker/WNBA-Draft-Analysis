@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WNBA Draft Analytics — 1997–2022</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1F3;
+    --paper-alt:#E2E7EB;
+    --card:#FFFFFF;
+    --ink:#10161F;
+    --ink-soft:#4B5768;
+    --ink-faint:#8791A0;
+    --line:#CBD2D9;
+    --court:#1B3A5C;
+    --court-deep:#122840;
+    --hoop:#E8601C;
+    --hoop-dim:#F3A57C;
+    --gold:#C99A2E;
+    --steal:#2C7A52;
+    --steal-bg:#E4F3EA;
+    --bust:#B23A48;
+    --bust-bg:#FBE9EA;
+    --radius:10px;
+    --shadow: 0 1px 2px rgba(16,22,31,0.06), 0 8px 24px -12px rgba(16,22,31,0.18);
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{font-family:'Bebas Neue',system-ui,sans-serif; letter-spacing:0.02em;}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+  a{color:inherit;}
+
+  /* ---------- top bar ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:50;
+    background:var(--court);
+    color:#fff;
+    border-bottom:3px solid var(--hoop);
+  }
+  .topbar-inner{
+    max-width:1280px; margin:0 auto; padding:14px 20px 0 20px;
+  }
+  .brand{
+    display:flex; align-items:baseline; gap:12px; margin-bottom:10px;
+  }
+  .brand .mark{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:34px; height:34px; border-radius:8px;
+    background:var(--hoop); color:#fff;
+    font-family:'Bebas Neue',sans-serif; font-size:18px;
+    flex:none;
+  }
+  .brand h1{
+    font-family:'Bebas Neue',sans-serif;
+    font-size:26px; font-weight:400; letter-spacing:0.03em;
+    margin:0;
+  }
+  .brand .sub{
+    color:#B9C6D6; font-size:12.5px; font-family:'JetBrains Mono',monospace;
+    letter-spacing:0.02em;
+  }
+  nav.tabs{
+    max-width:1280px; margin:0 auto;
+    display:flex; gap:2px; overflow-x:auto; padding:0 20px;
+  }
+  nav.tabs button{
+    appearance:none; border:none; background:transparent; color:#C9D4E0;
+    font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px;
+    padding:10px 14px; cursor:pointer; white-space:nowrap;
+    border-bottom:3px solid transparent; margin-bottom:-3px;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  nav.tabs button:hover{color:#fff;}
+  nav.tabs button.active{color:#fff; border-bottom-color:var(--hoop);}
+
+  main{max-width:1280px; margin:0 auto; padding:26px 20px 70px 20px;}
+  .view{display:none;}
+  .view.active{display:block; animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  h2.section-title{
+    font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.02em;
+    margin:0 0 4px 0; color:var(--court);
+  }
+  p.section-desc{
+    color:var(--ink-soft); font-size:14px; margin:0 0 18px 0; max-width:720px; line-height:1.5;
+  }
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow);
+  }
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:18px; min-width:0;}
+  .grid-2 > *{min-width:0;}
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  @media (max-width:860px){ .grid-2{grid-template-columns:1fr;} .grid-3{grid-template-columns:1fr;} }
+
+  /* ---------- stat strip ---------- */
+  .stat-strip{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+    border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-bottom:22px;}
+  .stat-strip .cell{background:var(--card); padding:14px 16px;}
+  .stat-strip .num{font-family:'Bebas Neue',sans-serif; font-size:30px; color:var(--court); line-height:1;}
+  .stat-strip .lbl{font-size:11.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.04em; margin-top:4px;}
+  @media (max-width:700px){ .stat-strip{grid-template-columns:repeat(2,1fr);} }
+
+  /* ---------- calculator / simulator ---------- */
+  .tool-card{padding:20px;}
+  .tool-card h3{
+    font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--court); margin:0 0 2px 0; letter-spacing:0.02em;
+  }
+  .tool-card .hint{color:var(--ink-faint); font-size:12.5px; margin:0 0 16px 0;}
+  .slider-row{display:flex; align-items:center; gap:14px; margin-bottom:14px; min-width:0;}
+  .slider-row input[type=range]{flex:1; min-width:0; accent-color:var(--hoop);}
+  .pick-badge{
+    font-family:'Bebas Neue',sans-serif; font-size:34px; color:#fff; background:var(--court);
+    border-radius:8px; padding:4px 14px; min-width:64px; text-align:center;
+  }
+  .readout-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; min-width:0;}
+  .readout{background:var(--paper); border-radius:8px; padding:10px 12px; text-align:center; min-width:0;}
+  .readout .v{font-family:'Bebas Neue',sans-serif; font-size:24px; color:var(--ink);}
+  .readout .k{font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.03em;}
+  .mini-chart{width:100%; height:110px; display:block;}
+
+  select, .select{
+    font-family:'Inter',sans-serif; font-size:13.5px; padding:7px 10px; border-radius:7px;
+    border:1px solid var(--line); background:#fff; color:var(--ink);
+    max-width:100%;
+  }
+  #simPick{max-width:220px;}
+  @media (max-width:480px){ #simPick{max-width:100%;} }
+  .field-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; min-width:0;}
+  .field-row > *{min-width:0;}
+  .field-row label{font-size:12px; color:var(--ink-soft); font-weight:600; margin-right:4px;}
+  button.action{
+    appearance:none; border:none; background:var(--hoop); color:#fff; font-weight:700; font-size:13px;
+    padding:8px 16px; border-radius:7px; cursor:pointer;
+  }
+  button.action:hover{background:#D1530F;}
+
+  .verdict{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .verdict.steal{background:var(--steal-bg); color:var(--steal);}
+  .verdict.bust{background:var(--bust-bg); color:var(--bust);}
+  .verdict.neutral{background:var(--paper-alt); color:var(--ink-soft);}
+
+  .sim-result{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line); display:none;}
+  .sim-result.show{display:block;}
+  .sim-player{font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--court);}
+  .sim-sub{font-size:12.5px; color:var(--ink-soft); margin-bottom:10px;}
+
+  /* ---------- tables ---------- */
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-faint);
+    padding:8px 10px; border-bottom:2px solid var(--line); cursor:pointer; user-select:none; white-space:nowrap;
+  }
+  thead th:hover{color:var(--court);}
+  thead th.sorted::after{content:" \25BE"; color:var(--hoop);}
+  tbody td{padding:7px 10px; border-bottom:1px solid #EEF0F2; white-space:nowrap;}
+  tbody tr:hover{background:var(--paper);}
+  .num-cell{font-family:'JetBrains Mono',monospace; text-align:right;}
+  .table-wrap{overflow-x:auto; border-radius:var(--radius); border:1px solid var(--line); background:#fff;}
+  .table-toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:14px 0;}
+  input[type=text]{
+    font-family:'Inter',sans-serif; font-size:13.5px; padding:7px 10px; border-radius:7px;
+    border:1px solid var(--line); background:#fff; min-width:200px;
+  }
+  .pager{display:flex; align-items:center; gap:10px; margin-top:10px; font-size:12.5px; color:var(--ink-soft);}
+  .pager button{appearance:none; border:1px solid var(--line); background:#fff; border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px;}
+  .pager button:disabled{opacity:0.35; cursor:default;}
+  .badge{font-size:10px; padding:1px 6px; border-radius:5px; background:var(--paper-alt); color:var(--ink-soft); margin-left:6px;}
+
+  /* ---------- charts ---------- */
+  .chart-card{padding:18px;}
+  .bar-row{display:flex; align-items:center; gap:8px; padding:3px 0; font-size:12.5px;}
+  .bar-row .name{width:150px; flex:none; color:var(--ink-soft); text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .bar-row .track{flex:1; background:var(--paper); border-radius:4px; height:16px; position:relative;}
+  .bar-row .fill{position:absolute; top:0; bottom:0; border-radius:4px;}
+  .bar-row .val{width:54px; flex:none; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink-soft);}
+
+  .gem-list{list-style:none; margin:0; padding:0;}
+  .gem-list li{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:9px 0; border-bottom:1px solid #EEF0F2; font-size:13px;
+  }
+  .gem-list li:last-child{border-bottom:none;}
+  .gem-name{font-weight:600;}
+  .gem-meta{color:var(--ink-faint); font-size:11.5px;}
+  .gem-score{font-family:'JetBrains Mono',monospace; font-weight:700;}
+
+  footer{max-width:1280px; margin:0 auto; padding:10px 20px 40px 20px; color:var(--ink-faint); font-size:11.5px;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="mark">W</span>
+      <h1>WNBA DRAFT ANALYTICS</h1>
+      <span class="sub" id="brandSub">1997–2022 · 1,064 picks</span>
+    </div>
+  </div>
+  <nav class="tabs" id="tabNav">
+    <button data-tab="overview" class="active">Overview</button>
+    <button data-tab="explorer">Draft Explorer</button>
+    <button data-tab="value">Pick Value</button>
+    <button data-tab="teams">Team Rankings</button>
+    <button data-tab="schools">School Rankings</button>
+    <button data-tab="gems">Hidden Gems</button>
+    <button data-tab="busts">Busts</button>
+    <button data-tab="timeline">Timeline</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="view active" id="view-overview">
+    <h2 class="section-title">How should a GM draft?</h2>
+    <p class="section-desc">Twenty-five years of WNBA draft outcomes, evaluated by <em>pick</em>, not just by player. Every stat here is measured against what a slot has historically produced — including the players who never played a WNBA game.</p>
+
+    <div class="stat-strip" id="statStrip"></div>
+
+    <div class="grid-2">
+      <div class="card tool-card">
+        <h3>Draft Value Calculator</h3>
+        <p class="hint">Select any pick, 1–64 — see what history says to expect.</p>
+        <div class="slider-row">
+          <div class="pick-badge" id="calcPickBadge">1</div>
+          <input type="range" id="calcSlider" min="1" max="64" value="1" step="1">
+        </div>
+        <div class="readout-grid">
+          <div class="readout"><div class="v" id="calcWS">–</div><div class="k">Expected Win Shares</div></div>
+          <div class="readout"><div class="v" id="calcBust">–</div><div class="k">Bust Rate</div></div>
+          <div class="readout"><div class="v" id="calcStar">–</div><div class="k">Star Rate</div></div>
+        </div>
+        <svg class="mini-chart" id="calcCurve" viewBox="0 0 560 110" preserveAspectRatio="none"></svg>
+      </div>
+
+      <div class="card tool-card">
+        <h3>General Manager Simulator</h3>
+        <p class="hint">Pick a draft year and slot — see who was actually taken, and how it graded out.</p>
+        <div class="field-row">
+          <label>Year</label>
+          <select id="simYear" class="select"></select>
+          <label>Pick</label>
+          <select id="simPick" class="select"></select>
+          <button class="action" id="simGo">Make the pick</button>
+        </div>
+        <div class="sim-result" id="simResult">
+          <div class="sim-player" id="simPlayerName">—</div>
+          <div class="sim-sub" id="simPlayerSub">—</div>
+          <div class="readout-grid">
+            <div class="readout"><div class="v" id="simWS">–</div><div class="k">Career Win Shares</div></div>
+            <div class="readout"><div class="v" id="simExp">–</div><div class="k">Expected at Slot</div></div>
+            <div class="readout"><div class="v" id="simScore">–</div><div class="k">Steal Score</div></div>
+          </div>
+          <span class="verdict neutral" id="simVerdict">—</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EXPLORER ============ -->
+  <section class="view" id="view-explorer">
+    <h2 class="section-title">Draft Explorer</h2>
+    <p class="section-desc">Every pick, 1997–2022. Search by player or college, filter by round, and sort any column.</p>
+    <div class="table-toolbar">
+      <input type="text" id="expSearch" placeholder="Search player or college…">
+      <select id="expRound" class="select">
+        <option value="">All rounds</option>
+        <option value="1">Round 1</option>
+        <option value="2">Round 2</option>
+        <option value="3">Round 3</option>
+        <option value="4">Round 4+</option>
+      </select>
+      <select id="expEra" class="select">
+        <option value="">All eras</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table id="expTable">
+        <thead><tr>
+          <th data-key="year">Year</th>
+          <th data-key="overall_pick">Pick</th>
+          <th data-key="round">Rd</th>
+          <th data-key="team">Team</th>
+          <th data-key="player">Player</th>
+          <th data-key="college_display">College</th>
+          <th data-key="win_shares_ev">Win Shares</th>
+          <th data-key="steal_score">Steal Score</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="pager" id="expPager"></div>
+  </section>
+
+  <!-- ============ PICK VALUE ============ -->
+  <section class="view" id="view-value">
+    <h2 class="section-title">Draft Pick Value Curve</h2>
+    <p class="section-desc">LOWESS-smoothed expected career win shares by draft slot, with bust and star rate curves. Hover any point for detail.</p>
+    <div class="card chart-card">
+      <svg id="valueCurve" viewBox="0 0 1180 380" style="width:100%; height:380px;"></svg>
+      <div id="valueTooltip" class="mono" style="font-size:12px; color:var(--ink-soft); height:18px;"></div>
+    </div>
+    <div class="grid-2" style="margin-top:18px;">
+      <div class="card chart-card">
+        <h3 style="font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--court); margin:0 0 10px;">Bust Rate by Pick</h3>
+        <svg id="bustCurve" viewBox="0 0 540 200" style="width:100%; height:200px;"></svg>
+      </div>
+      <div class="card chart-card">
+        <h3 style="font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--court); margin:0 0 10px;">Star Rate by Pick</h3>
+        <svg id="starCurve" viewBox="0 0 540 200" style="width:100%; height:200px;"></svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TEAMS ============ -->
+  <section class="view" id="view-teams">
+    <h2 class="section-title">Team Draft Rankings</h2>
+    <p class="section-desc">Franchises ranked by average Draft Steal Score per pick (relocation-adjusted lineage). Excludes 2021–2022 classes.</p>
+    <div class="card chart-card" id="teamChart"></div>
+    <div class="table-toolbar" style="margin-top:18px;"></div>
+    <div class="table-wrap">
+      <table id="teamTable">
+        <thead><tr>
+          <th data-key="franchise">Franchise</th>
+          <th data-key="picks_judged">Picks</th>
+          <th data-key="avg_win_shares">Avg WS</th>
+          <th data-key="avg_steal_score">Avg Steal Score</th>
+          <th data-key="steal_rate">Steal Rate</th>
+          <th data-key="bust_rate">Bust Rate</th>
+          <th data-key="draft_roi">Draft ROI</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ SCHOOLS ============ -->
+  <section class="view" id="view-schools">
+    <h2 class="section-title">School Rankings</h2>
+    <p class="section-desc">College programs ranked by total career win shares produced (US colleges, excludes 2021–2022 classes). Minimum 3 judged picks.</p>
+    <div class="card chart-card" id="schoolChart"></div>
+    <div class="table-wrap" style="margin-top:18px;">
+      <table id="schoolTable">
+        <thead><tr>
+          <th data-key="college_display">College</th>
+          <th data-key="picks">Picks</th>
+          <th data-key="avg_win_shares">Avg WS</th>
+          <th data-key="total_win_shares">Total WS</th>
+          <th data-key="avg_steal_score">Avg Steal Score</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ HIDDEN GEMS ============ -->
+  <section class="view" id="view-gems">
+    <h2 class="section-title">Hidden Gem Finder</h2>
+    <p class="section-desc">Automatically generated from the Draft Steal Score. Excludes 2021–2022 classes.</p>
+    <div class="grid-2">
+      <div class="card tool-card">
+        <h3>Best Steals Ever</h3>
+        <ul class="gem-list" id="gemBestSteals"></ul>
+      </div>
+      <div class="card tool-card">
+        <h3>Most Valuable Second-Round Picks</h3>
+        <ul class="gem-list" id="gemSecondRound"></ul>
+      </div>
+      <div class="card tool-card">
+        <h3>Most Overlooked Colleges</h3>
+        <p class="hint">10 or fewer picks all-time, still beating draft-slot expectations.</p>
+        <ul class="gem-list" id="gemColleges"></ul>
+      </div>
+      <div class="card tool-card">
+        <h3>International Success Stories</h3>
+        <ul class="gem-list" id="gemIntl"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BUSTS ============ -->
+  <section class="view" id="view-busts">
+    <h2 class="section-title">Biggest Busts</h2>
+    <p class="section-desc">Largest gaps below what a draft slot historically predicts. Excludes 2021–2022 classes.</p>
+    <div class="table-wrap">
+      <table id="bustTable">
+        <thead><tr>
+          <th data-key="player">Player</th>
+          <th data-key="year">Year</th>
+          <th data-key="overall_pick">Pick</th>
+          <th data-key="team">Team</th>
+          <th data-key="college_display">College</th>
+          <th data-key="win_shares_ev">Win Shares</th>
+          <th data-key="expected_win_shares">Expected</th>
+          <th data-key="steal_score">Steal Score</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ TIMELINE ============ -->
+  <section class="view" id="view-timeline">
+    <h2 class="section-title">Draft Class Strength Over Time</h2>
+    <p class="section-desc">Total Draft Steal Score by class — how much value each year's draft delivered above or below what its pick slots implied. Excludes 2021–2022 classes.</p>
+    <div class="card chart-card">
+      <svg id="timelineChart" viewBox="0 0 1180 340" style="width:100%; height:340px;"></svg>
+    </div>
+  </section>
+
+</main>
+
+<footer>Finding Hidden Gems: 25 Years of WNBA Draft Value and Player Success · Data: 1997–2022 WNBA draft results · Position data not available in source.</footer>
+
+<script src="data.js"></script>
+<script>
+const D = DASHBOARD_DATA;
+const fmt1 = v => (v===null||v===undefined||isNaN(v)) ? '—' : Number(v).toFixed(1);
+const fmt2 = v => (v===null||v===undefined||isNaN(v)) ? '—' : Number(v).toFixed(2);
+const fmtPct = v => (v===null||v===undefined||isNaN(v)) ? '—' : (Number(v)*100).toFixed(0)+'%';
+const fmtSigned = v => (v===null||v===undefined||isNaN(v)) ? '—' : (v>=0?'+':'')+Number(v).toFixed(1);
+
+/* ---------------- tab switching ---------------- */
+document.getElementById('tabNav').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-tab]');
+  if(!btn) return;
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+btn.dataset.tab).classList.add('active');
+});
+
+/* ---------------- stat strip ---------------- */
+(function(){
+  const bustPeak = Math.max(...D.pick_curve.map(p=>p.bust_rate));
+  const totalSteals = D.picks.filter(p=>!p.too_early_to_judge && p.steal_score>0).length;
+  const totalJudged = D.picks.filter(p=>!p.too_early_to_judge).length;
+  const cells = [
+    [D.meta.total_picks.toLocaleString(), 'Total Draft Picks'],
+    [D.meta.years[0]+'–'+D.meta.years[1], 'Draft Years Covered'],
+    [fmtPct(totalSteals/totalJudged), 'Picks That Beat Their Slot'],
+    [fmtPct(bustPeak), 'Peak Bust Rate (late picks)'],
+  ];
+  document.getElementById('statStrip').innerHTML = cells.map(c=>
+    `<div class="cell"><div class="num">${c[0]}</div><div class="lbl">${c[1]}</div></div>`).join('');
+})();
+
+/* ---------------- mini SVG line chart helper ---------------- */
+function buildLinePath(points, w, h, xMin, xMax, yMin, yMax, padL=6, padR=6, padT=8, padB=8){
+  const xScale = x => padL + (x - xMin) / (xMax - xMin) * (w - padL - padR);
+  const yScale = y => (h - padB) - (y - yMin) / (yMax - yMin) * (h - padT - padB);
+  const d = points.map((p,i)=> (i===0?'M':'L') + xScale(p.x).toFixed(1) + ',' + yScale(p.y).toFixed(1)).join(' ');
+  return {d, xScale, yScale};
+}
+
+/* ---------------- Draft Value Calculator ---------------- */
+const curve = D.pick_curve.slice().sort((a,b)=>a.overall_pick-b.overall_pick);
+const curveMaxWS = Math.max(...curve.map(p=>p.expected_win_shares));
+function renderCalcCurve(highlightPick){
+  const w=560, h=110;
+  const pts = curve.map(p=>({x:p.overall_pick, y:p.expected_win_shares}));
+  const {d, xScale, yScale} = buildLinePath(pts, w, h, 1, 64, 0, curveMaxWS*1.05, 4,4,8,6);
+  const hl = curve.find(p=>p.overall_pick===highlightPick) || curve[0];
+  const hx = xScale(hl.overall_pick), hy = yScale(hl.expected_win_shares);
+  const svg = document.getElementById('calcCurve');
+  svg.innerHTML = `
+    <path d="${d}" fill="none" stroke="#E8601C" stroke-width="2.5"/>
+    <line x1="${hx}" y1="0" x2="${hx}" y2="${h}" stroke="#CBD2D9" stroke-width="1" stroke-dasharray="3,3"/>
+    <circle cx="${hx}" cy="${hy}" r="5" fill="#1B3A5C" stroke="#fff" stroke-width="1.5"/>
+  `;
+}
+function updateCalc(pick){
+  pick = Math.max(1, Math.min(64, pick));
+  document.getElementById('calcPickBadge').textContent = pick;
+  document.getElementById('calcSlider').value = pick;
+  const row = curve.reduce((best,p)=> Math.abs(p.overall_pick-pick) < Math.abs(best.overall_pick-pick) ? p : best, curve[0]);
+  document.getElementById('calcWS').textContent = fmt1(row.expected_win_shares);
+  document.getElementById('calcBust').textContent = fmtPct(row.bust_rate);
+  document.getElementById('calcStar').textContent = fmtPct(row.star_rate);
+  renderCalcCurve(pick);
+}
+document.getElementById('calcSlider').addEventListener('input', e=> updateCalc(parseInt(e.target.value,10)));
+updateCalc(1);
+
+/* ---------------- GM Simulator ---------------- */
+const years = [...new Set(D.picks.map(p=>p.year))].sort((a,b)=>b-a);
+const simYearSel = document.getElementById('simYear');
+simYearSel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+function populateSimPicks(){
+  const y = parseInt(simYearSel.value,10);
+  const rows = D.picks.filter(p=>p.year===y).sort((a,b)=>a.overall_pick-b.overall_pick);
+  document.getElementById('simPick').innerHTML = rows.map(r=>
+    `<option value="${r.overall_pick}">Pick ${r.overall_pick} — ${r.player||'(unnamed)'}${r.college_display?' · '+r.college_display:''}</option>`).join('');
+}
+simYearSel.addEventListener('change', populateSimPicks);
+populateSimPicks();
+
+document.getElementById('simGo').addEventListener('click', ()=>{
+  const y = parseInt(simYearSel.value,10);
+  const pk = parseInt(document.getElementById('simPick').value,10);
+  const row = D.picks.find(p=>p.year===y && p.overall_pick===pk);
+  if(!row) return;
+  document.getElementById('simResult').classList.add('show');
+  document.getElementById('simPlayerName').textContent = row.player || '(unnamed pick)';
+  document.getElementById('simPlayerSub').textContent = `${y} · Pick ${row.overall_pick} (Round ${row.round}) · ${row.team}${row.college_display? ' · '+row.college_display : (row.is_international ? ' · International' : '')}`;
+  document.getElementById('simWS').textContent = fmt1(row.win_shares_ev);
+  document.getElementById('simExp').textContent = fmt1(row.expected_win_shares);
+  document.getElementById('simScore').textContent = fmtSigned(row.steal_score);
+  const v = document.getElementById('simVerdict');
+  if(row.too_early_to_judge){
+    v.textContent = 'Too early to judge'; v.className='verdict neutral';
+  } else if(row.steal_score > 5){
+    v.textContent = 'Steal'; v.className='verdict steal';
+  } else if(row.steal_score < -5){
+    v.textContent = 'Bust'; v.className='verdict bust';
+  } else {
+    v.textContent = 'As expected'; v.className='verdict neutral';
+  }
+});
+
+/* ---------------- Draft Explorer table ---------------- */
+const eraOf = year => year<=2002 ? '1997-2002: Founding Era' : year<=2009 ? '2003-2009: Contraction Era' : year<=2015 ? '2010-2015: Stabilization Era' : '2016-2022: Modern Era';
+document.getElementById('expEra').innerHTML += ['1997-2002: Founding Era','2003-2009: Contraction Era','2010-2015: Stabilization Era','2016-2022: Modern Era']
+  .map(e=>`<option value="${e}">${e}</option>`).join('');
+
+let expSort = {key:'steal_score', dir:-1};
+let expPage = 0;
+const PAGE_SIZE = 25;
+
+function expFilteredRows(){
+  const q = document.getElementById('expSearch').value.trim().toLowerCase();
+  const round = document.getElementById('expRound').value;
+  const era = document.getElementById('expEra').value;
+  let rows = D.picks.filter(p=>{
+    if(q && !((p.player||'').toLowerCase().includes(q) || (p.college_display||'').toLowerCase().includes(q))) return false;
+    if(round){
+      const r = round==='4' ? p.round>=4 : p.round===parseInt(round,10);
+      if(!r) return false;
+    }
+    if(era && eraOf(p.year)!==era) return false;
+    return true;
+  });
+  rows.sort((a,b)=>{
+    let av=a[expSort.key], bv=b[expSort.key];
+    if(av===null||av===undefined) av = typeof bv==='string' ? '' : -Infinity;
+    if(bv===null||bv===undefined) bv = typeof av==='string' ? '' : -Infinity;
+    if(typeof av==='string') return av.localeCompare(bv) * expSort.dir;
+    return (av-bv) * expSort.dir;
+  });
+  return rows;
+}
+
+function renderExplorer(){
+  const rows = expFilteredRows();
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  expPage = Math.min(expPage, totalPages-1);
+  const pageRows = rows.slice(expPage*PAGE_SIZE, expPage*PAGE_SIZE+PAGE_SIZE);
+  document.querySelector('#expTable tbody').innerHTML = pageRows.map(p=>`
+    <tr>
+      <td>${p.year}</td>
+      <td class="mono">${p.overall_pick}</td>
+      <td>${p.round}</td>
+      <td>${p.team}</td>
+      <td>${p.player||'—'}${p.too_early_to_judge?'<span class="badge">too early</span>':''}</td>
+      <td>${p.college_display || (p.is_international?'International':'—')}</td>
+      <td class="num-cell">${fmt1(p.win_shares_ev)}</td>
+      <td class="num-cell" style="color:${p.steal_score>=0?'var(--steal)':'var(--bust)'}">${fmtSigned(p.steal_score)}</td>
+    </tr>`).join('');
+  document.getElementById('expPager').innerHTML = `
+    <button ${expPage===0?'disabled':''} id="expPrev">&larr; Prev</button>
+    <span>Page ${expPage+1} of ${totalPages} · ${rows.length} picks</span>
+    <button ${expPage>=totalPages-1?'disabled':''} id="expNext">Next &rarr;</button>`;
+  const p = document.getElementById('expPrev'); if(p) p.onclick=()=>{expPage--; renderExplorer();};
+  const n = document.getElementById('expNext'); if(n) n.onclick=()=>{expPage++; renderExplorer();};
+  document.querySelectorAll('#expTable thead th').forEach(th=>{
+    th.classList.toggle('sorted', th.dataset.key===expSort.key);
+  });
+}
+document.getElementById('expSearch').addEventListener('input', ()=>{expPage=0; renderExplorer();});
+document.getElementById('expRound').addEventListener('change', ()=>{expPage=0; renderExplorer();});
+document.getElementById('expEra').addEventListener('change', ()=>{expPage=0; renderExplorer();});
+document.querySelector('#expTable thead').addEventListener('click', e=>{
+  const th = e.target.closest('th'); if(!th) return;
+  const key = th.dataset.key;
+  if(expSort.key===key) expSort.dir *= -1; else expSort = {key, dir:1};
+  expPage = 0;
+  renderExplorer();
+});
+renderExplorer();
+
+/* ---------------- generic sortable table (teams / schools / busts) ---------------- */
+function makeSortableTable(tableId, data, rowFn, defaultKey, defaultDir){
+  let sort = {key:defaultKey, dir:defaultDir};
+  const table = document.getElementById(tableId);
+  function render(){
+    const rows = data.slice().sort((a,b)=>{
+      let av=a[sort.key], bv=b[sort.key];
+      if(typeof av==='string') return av.localeCompare(bv) * sort.dir;
+      return ((av||0)-(bv||0)) * sort.dir;
+    });
+    table.querySelector('tbody').innerHTML = rows.map(rowFn).join('');
+    table.querySelectorAll('thead th').forEach(th=> th.classList.toggle('sorted', th.dataset.key===sort.key));
+  }
+  table.querySelector('thead').addEventListener('click', e=>{
+    const th = e.target.closest('th'); if(!th) return;
+    const key = th.dataset.key;
+    if(sort.key===key) sort.dir *= -1; else sort = {key, dir:-1};
+    render();
+  });
+  render();
+}
+
+/* ---------------- Teams tab ---------------- */
+(function(){
+  const data = D.franchise.slice().sort((a,b)=> b.avg_steal_score - a.avg_steal_score);
+  const maxAbs = Math.max(...data.map(d=>Math.abs(d.avg_steal_score)));
+  document.getElementById('teamChart').innerHTML = data.map(d=>{
+    const pct = Math.abs(d.avg_steal_score)/maxAbs*50;
+    const positive = d.avg_steal_score>=0;
+    const left = positive ? 50 : 50-pct;
+    const color = positive ? 'var(--hoop)' : 'var(--bust)';
+    return `<div class="bar-row">
+      <div class="name">${d.franchise}</div>
+      <div class="track"><div class="fill" style="left:${left}%; width:${pct}%; background:${color};"></div>
+        <div style="position:absolute; left:50%; top:0; bottom:0; width:1px; background:#B9C1CB;"></div></div>
+      <div class="val">${fmt2(d.avg_steal_score)}</div>
+    </div>`;
+  }).join('');
+
+  makeSortableTable('teamTable', D.franchise, d=>`
+    <tr>
+      <td>${d.franchise}</td>
+      <td class="num-cell">${d.picks_judged}</td>
+      <td class="num-cell">${fmt1(d.avg_win_shares)}</td>
+      <td class="num-cell" style="color:${d.avg_steal_score>=0?'var(--steal)':'var(--bust)'}">${fmtSigned(d.avg_steal_score)}</td>
+      <td class="num-cell">${fmtPct(d.steal_rate)}</td>
+      <td class="num-cell">${fmtPct(d.bust_rate)}</td>
+      <td class="num-cell">${fmt2(d.draft_roi)}x</td>
+    </tr>`, 'avg_steal_score', -1);
+})();
+
+/* ---------------- Schools tab ---------------- */
+(function(){
+  const top = D.colleges.filter(c=>c.picks>=3).slice(0,16);
+  const maxWS = Math.max(...top.map(c=>c.total_win_shares));
+  document.getElementById('schoolChart').innerHTML = top.map(c=>{
+    const pct = c.total_win_shares/maxWS*100;
+    return `<div class="bar-row">
+      <div class="name">${c.college_display}</div>
+      <div class="track"><div class="fill" style="left:0; width:${pct}%; background:var(--court);"></div></div>
+      <div class="val">${fmt1(c.total_win_shares)}</div>
+    </div>`;
+  }).join('');
+
+  makeSortableTable('schoolTable', D.colleges.filter(c=>c.picks>=3), d=>`
+    <tr>
+      <td>${d.college_display}</td>
+      <td class="num-cell">${d.picks}</td>
+      <td class="num-cell">${fmt1(d.avg_win_shares)}</td>
+      <td class="num-cell">${fmt1(d.total_win_shares)}</td>
+      <td class="num-cell" style="color:${d.avg_steal_score>=0?'var(--steal)':'var(--bust)'}">${fmtSigned(d.avg_steal_score)}</td>
+    </tr>`, 'total_win_shares', -1);
+})();
+
+/* ---------------- Hidden Gems tab ---------------- */
+function gemLi(name, meta, score){
+  const positive = score>=0;
+  return `<li><div><div class="gem-name">${name}</div><div class="gem-meta">${meta}</div></div>
+    <div class="gem-score" style="color:${positive?'var(--steal)':'var(--bust)'}">${fmtSigned(score)}</div></li>`;
+}
+document.getElementById('gemBestSteals').innerHTML = D.gems.best_steals.map(g=>
+  gemLi(g.player, `${g.year} · Pick ${g.overall_pick} · ${g.college_display||'International'}`, g.steal_score)).join('');
+document.getElementById('gemSecondRound').innerHTML = D.gems.second_round.map(g=>
+  gemLi(g.player, `${g.year} · Pick ${g.overall_pick} · ${g.college_display||'International'}`, g.steal_score)).join('');
+document.getElementById('gemColleges').innerHTML = D.gems.overlooked_colleges.map(g=>
+  gemLi(g.college_display, `${g.judged_picks} judged picks · ${g.total_picks_alltime} all-time`, g.avg_steal_score)).join('');
+document.getElementById('gemIntl').innerHTML = D.gems.international.map(g=>
+  gemLi(g.player, `${g.year} · Pick ${g.overall_pick} · ${g.team}`, g.steal_score)).join('');
+
+/* ---------------- Busts tab ---------------- */
+makeSortableTable('bustTable', D.biggest_busts, d=>`
+  <tr>
+    <td>${d.player}</td>
+    <td>${d.year}</td>
+    <td class="mono">${d.overall_pick}</td>
+    <td>${d.team}</td>
+    <td>${d.college_display||'International'}</td>
+    <td class="num-cell">${fmt1(d.win_shares_ev)}</td>
+    <td class="num-cell">${fmt1(d.expected_win_shares)}</td>
+    <td class="num-cell" style="color:var(--bust)">${fmtSigned(d.steal_score)}</td>
+  </tr>`, 'steal_score', 1);
+
+/* ---------------- Pick Value tab: full curve chart ---------------- */
+(function(){
+  const w=1180, h=380, padL=46, padR=20, padT=16, padB=34;
+  const picks = D.picks.filter(p=>true);
+  const xMin=1, xMax=64, yMin=Math.min(0,...picks.map(p=>p.win_shares_ev)), yMax=Math.max(...curve.map(p=>p.expected_win_shares))*1.15;
+  const xScale = x => padL + (x-xMin)/(xMax-xMin)*(w-padL-padR);
+  const yScale = y => (h-padB) - (y-yMin)/(yMax-yMin)*(h-padT-padB);
+  const dots = picks.map(p=>`<circle cx="${xScale(p.overall_pick).toFixed(1)}" cy="${yScale(p.win_shares_ev).toFixed(1)}" r="2.6" fill="#9AA5B1" opacity="0.35"></circle>`).join('');
+  const linePts = curve.map(p=>({x:p.overall_pick, y:p.expected_win_shares}));
+  const pathD = linePts.map((p,i)=>(i===0?'M':'L')+xScale(p.x).toFixed(1)+','+yScale(p.y).toFixed(1)).join(' ');
+  const zeroY = yScale(0);
+  const yTicks = [];
+  const step = Math.ceil(yMax/5/5)*5 || 5;
+  for(let v=0; v<=yMax; v+=step) yTicks.push(v);
+  const xTicks = [1,10,20,30,40,50,60,64];
+  const gridY = yTicks.map(v=>`<line x1="${padL}" y1="${yScale(v)}" x2="${w-padR}" y2="${yScale(v)}" stroke="#EEF0F2" stroke-width="1"/>
+    <text x="${padL-8}" y="${yScale(v)+4}" text-anchor="end" font-size="11" fill="#8791A0" font-family="JetBrains Mono, monospace">${v}</text>`).join('');
+  const gridX = xTicks.map(v=>`<text x="${xScale(v)}" y="${h-padB+18}" text-anchor="middle" font-size="11" fill="#8791A0" font-family="JetBrains Mono, monospace">${v}</text>`).join('');
+
+  const svg = document.getElementById('valueCurve');
+  svg.innerHTML = `
+    ${gridY}
+    <line x1="${padL}" y1="${zeroY}" x2="${w-padR}" y2="${zeroY}" stroke="#CBD2D9" stroke-width="1"/>
+    ${dots}
+    <path d="${pathD}" fill="none" stroke="#E8601C" stroke-width="3"/>
+    ${gridX}
+    <text x="${padL}" y="16" font-size="12" fill="#1B3A5C" font-family="Inter, sans-serif" font-weight="700">Expected career win shares</text>
+  `;
+  picks.forEach(p=>{
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', xScale(p.overall_pick)); c.setAttribute('cy', yScale(p.win_shares_ev));
+    c.setAttribute('r', 7); c.setAttribute('fill', 'transparent');
+    c.addEventListener('mouseenter', ()=>{
+      document.getElementById('valueTooltip').textContent =
+        `Pick ${p.overall_pick} (${p.year}) — ${p.player||'unnamed'}: ${fmt1(p.win_shares_ev)} career win shares vs ${fmt1(p.expected_win_shares)} expected`;
+    });
+    svg.appendChild(c);
+  });
+  svg.addEventListener('mouseleave', ()=> document.getElementById('valueTooltip').textContent = '');
+
+  // bust / star mini curves
+  function miniCurve(svgId, key, color, w=540, h=200){
+    const padL=40, padR=14, padT=12, padB=26;
+    const pts = curve.map(p=>({x:p.overall_pick, y:p[key]}));
+    const xS = x => padL + (x-1)/(63)*(w-padL-padR);
+    const yS = y => (h-padB) - y*(h-padT-padB);
+    const d = pts.map((p,i)=>(i===0?'M':'L')+xS(p.x).toFixed(1)+','+yS(p.y).toFixed(1)).join(' ');
+    const ticks = [0,0.25,0.5,0.75,1];
+    const grid = ticks.map(v=>`<line x1="${padL}" y1="${yS(v)}" x2="${w-padR}" y2="${yS(v)}" stroke="#EEF0F2"/>
+      <text x="${padL-6}" y="${yS(v)+3}" text-anchor="end" font-size="10" fill="#8791A0" font-family="JetBrains Mono, monospace">${Math.round(v*100)}%</text>`).join('');
+    document.getElementById(svgId).innerHTML = `${grid}<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5"/>`;
+  }
+  miniCurve('bustCurve', 'bust_rate', '#B23A48');
+  miniCurve('starCurve', 'star_rate', '#C99A2E');
+})();
+
+/* ---------------- Timeline tab ---------------- */
+(function(){
+  const w=1180, h=340, padL=50, padR=20, padT=16, padB=50;
+  const data = D.gems.class_strength.slice().sort((a,b)=>a.year-b.year);
+  const maxAbs = Math.max(...data.map(d=>Math.abs(d.total_steal_score)));
+  const bw = (w-padL-padR)/data.length;
+  const yZero = padT + (h-padT-padB)/2;
+  const scaleY = v => yZero - (v/maxAbs)*((h-padT-padB)/2);
+  const bars = data.map((d,i)=>{
+    const x = padL + i*bw + bw*0.12;
+    const bw2 = bw*0.76;
+    const y0 = scaleY(0), y1 = scaleY(d.total_steal_score);
+    const y = Math.min(y0,y1), hgt = Math.abs(y1-y0);
+    const color = d.total_steal_score>=0 ? '#E8601C' : '#B23A48';
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw2.toFixed(1)}" height="${Math.max(hgt,1).toFixed(1)}" fill="${color}"></rect>
+      ${ (i%2===0) ? `<text x="${(x+bw2/2).toFixed(1)}" y="${h-padB+16}" text-anchor="middle" font-size="10" fill="#8791A0" font-family="JetBrains Mono, monospace">${d.year}</text>` : ''}`;
+  }).join('');
+  document.getElementById('timelineChart').innerHTML = `
+    <line x1="${padL}" y1="${yZero}" x2="${w-padR}" y2="${yZero}" stroke="#CBD2D9"/>
+    ${bars}
+    <text x="${padL}" y="16" font-size="12" fill="#1B3A5C" font-family="Inter, sans-serif" font-weight="700">Total Draft Steal Score by class</text>
+  `;
+})();
+</script>
+</body>
+</html>
